@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
-    "target": "es2016",
-    "module": "commonjs",
     "allowJs": true,
     "checkJs": true,
     "esModuleInterop": false,
     "forceConsistentCasingInFileNames": true,
+    "module": "commonjs",
+    "outDir": "dist",
+    "skipLibCheck": false,
     "strict": true,
-    "skipLibCheck": false
+    "target": "es2016"
   }
 }
