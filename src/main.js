@@ -2,7 +2,7 @@
  * Main game loop, executed on every tick
  */
 const loop = () => {
-  console.log('GAME LOOP TICK');
+  console.log('TICK TACK!');
 };
 
 module.exports = {
