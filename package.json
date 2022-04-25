@@ -1,0 +1,17 @@
+{
+  "name": "screeps-bot",
+  "private": true,
+  "scripts": {
+    "deploy": "node ./tools/deploy.js"
+  },
+  "devDependencies": {
+    "@types/copy": "0.3.x",
+    "@types/del": "4.0.x",
+    "@types/node": "14.x",
+    "@types/screeps": "3.3.x",
+    "copy": "0.3.x",
+    "del": "6.0.x",
+    "dotenv": "16.0.x",
+    "typescript": "4.6.x"
+  }
+}
