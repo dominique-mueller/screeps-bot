@@ -2,21 +2,23 @@ import { gc } from './gc';
 import { assignHarvestTicket, createHarvestTickets, HarvestTicket } from './ticket.harvest';
 import { assignTransferSpawnTicket, createTransferSpawnTickets, TransferSpawnTicket } from './ticket.transfer-spawn';
 import { assignUpgradeControllerTicket, createUpgradeControllerTickets, UpgradeControllerTicket } from './ticket.upgrade-controller';
+import { assignDefendTicket, DefendTicket } from './ticket.defend';
 
 export interface IdleTicket {
   name: 'IDLE';
 }
 
-export type Ticket = HarvestTicket | UpgradeControllerTicket | TransferSpawnTicket | IdleTicket;
+export type Ticket = HarvestTicket | UpgradeControllerTicket | TransferSpawnTicket | DefendTicket | IdleTicket;
 
-/**
- * Creep Memory
- */
-declare global {
-  interface CreepMemory {
-    assignedTicket: Ticket;
-  }
+export interface EnergyWorkerEducation {
+  name: 'ENERGY_WORKER';
 }
+
+export interface FighterEducation {
+  name: 'FIGHTER';
+}
+
+export type Education = EnergyWorkerEducation | FighterEducation;
 
 /**
  * Main game loop, executed on every tick
@@ -44,12 +46,16 @@ export const loop = (): void => {
   console.log(`- Available tickets (upgrade-controller): ${availableUpgradeControllerTickets.length}`);
 
   // Find all creeps without a ticket (idle)
-  const creepsWithoutTickets: Array<Creep> = Object.values(Game.creeps).filter((creep: Creep): boolean => {
-    return creep.memory.assignedTicket.name === 'IDLE';
-  });
+  const energyWorkerCreepsWithoutTickets: Array<Creep> = Object.values(Game.creeps)
+    .filter((creep: Creep): boolean => {
+      return creep.memory.education.name === 'ENERGY_WORKER';
+    })
+    .filter((creep: Creep): boolean => {
+      return creep.memory.assignedTicket.name === 'IDLE';
+    });
 
   // Manage available creeps with energy
-  const creepsWithEnergyWithoutTickets: Array<Creep> = creepsWithoutTickets.filter((creep: Creep): boolean => {
+  const creepsWithEnergyWithoutTickets: Array<Creep> = energyWorkerCreepsWithoutTickets.filter((creep: Creep): boolean => {
     return creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0;
   });
   const requiredAvailableTransferSpawnTickets = 1;
@@ -67,7 +73,7 @@ export const loop = (): void => {
   });
 
   // Manage available creeps without energy
-  const creepsWithoutEnergyWithoutTickets: Array<Creep> = creepsWithoutTickets.filter((creep: Creep): boolean => {
+  const creepsWithoutEnergyWithoutTickets: Array<Creep> = energyWorkerCreepsWithoutTickets.filter((creep: Creep): boolean => {
     return creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0;
   });
   creepsWithoutEnergyWithoutTickets.forEach((creep: Creep, index: number): void => {
@@ -76,6 +82,24 @@ export const loop = (): void => {
     }
   });
 
+  // Manage available fighter creeps
+  const isRoomAttacked = room.find(FIND_HOSTILE_CREEPS).length > 0;
+  if (isRoomAttacked) {
+    const fighterCreepsWithoutTickets = Object.values(Game.creeps)
+      .filter((creep: Creep) => {
+        return creep.memory.education.name === 'FIGHTER';
+      })
+      .filter((creep: Creep): boolean => {
+        return creep.memory.assignedTicket.name === 'IDLE';
+      });
+
+    fighterCreepsWithoutTickets.forEach((creep: Creep): void => {
+      creep.memory.assignedTicket = {
+        name: 'DEFEND',
+      };
+    });
+  }
+
   // Execution Management
   // ====================
 
@@ -83,6 +107,7 @@ export const loop = (): void => {
     HARVEST: assignHarvestTicket,
     TRANSFER_SPAWN: assignTransferSpawnTicket,
     UPGRADE_CONTROLLER: assignUpgradeControllerTicket,
+    DEFEND: assignDefendTicket,
     IDLE: (_creep: Creep) => {
       // noop
     },
@@ -95,22 +120,58 @@ export const loop = (): void => {
   // ================
 
   // TODO: Based on avaible tickets (but not all? e.g. harvest only right now?)
-  const desiredNumberOfCreeps = 6;
-  const existingNumberOfCreeps = Object.keys(Game.creeps).length;
+  const desiredNumberOfEnergyWorkerCreeps = 6;
+  const existingNumberOfEnergyWorkerCreeps = Object.values(Game.creeps).filter((creep: Creep) => {
+    return creep.memory.education.name === 'ENERGY_WORKER';
+  }).length;
 
-  console.log(`- Creeps progress: ${existingNumberOfCreeps} ---> ${desiredNumberOfCreeps}`);
+  console.log(`- Goal for Energy Worker creeps: ${existingNumberOfEnergyWorkerCreeps} ---> ${desiredNumberOfEnergyWorkerCreeps}`);
 
-  if (existingNumberOfCreeps <= desiredNumberOfCreeps) {
+  if (existingNumberOfEnergyWorkerCreeps < desiredNumberOfEnergyWorkerCreeps) {
     const spawn: StructureSpawn | undefined = room.find(FIND_MY_SPAWNS)[0];
     if (!spawn) {
       return;
     }
 
-    // TODO: Specific workers for other tickets
-    const energyWokerName = `energy-worker#${Game.time}`;
-    const energyWorkerBodyParts = [WORK, CARRY, MOVE];
-    spawn.spawnCreep(energyWorkerBodyParts, energyWokerName, {
+    const energyWorkerName = `energy-worker#${Game.time}`;
+    // Cost:                       100   50     50     50    50     = 300
+    const energyWorkerBodyParts = [WORK, CARRY, CARRY, MOVE, MOVE];
+    spawn.spawnCreep(energyWorkerBodyParts, energyWorkerName, {
       memory: {
+        education: {
+          name: 'ENERGY_WORKER',
+        },
+        assignedTicket: {
+          name: 'IDLE',
+        },
+      },
+    });
+  }
+
+  // Defense Spawn Management
+  // ========================
+  const existingNumberOfFighterCreeps = Object.values(Game.creeps).filter((creep: Creep) => {
+    return creep.memory.education.name === 'FIGHTER';
+  }).length;
+  const numberOfHostileCreeps = room.find(FIND_HOSTILE_CREEPS).length;
+
+  console.log(`- Goal for Fighter creeps: ${existingNumberOfFighterCreeps} ---> ${numberOfHostileCreeps}`);
+
+  // Do we have hostile creeps in our room AND not enough creeps to defend?
+  if (numberOfHostileCreeps > 0 && existingNumberOfFighterCreeps < numberOfHostileCreeps) {
+    const spawn: StructureSpawn | undefined = room.find(FIND_MY_SPAWNS)[0];
+    if (!spawn) {
+      return;
+    }
+
+    const fighterName = `fighter#${Game.time}`;
+    // Cost:                  80      50    80      50     = 260
+    const fighterBodyParts = [ATTACK, MOVE, ATTACK, MOVE];
+    spawn.spawnCreep(fighterBodyParts, fighterName, {
+      memory: {
+        education: {
+          name: 'FIGHTER',
+        },
         assignedTicket: {
           name: 'IDLE',
         },
