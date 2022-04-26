@@ -1,29 +1,66 @@
+<div align="center">
+
 # screeps-bot
 
-Personal screeps bot, written from scratch.
+My personal screeps bot, written from scratch. Use at your own risk!
+
+</div>
 
 <br><br>
 
-## Setup
+## Build and Deploy
 
-Steps:
+The project setup is simple: A bit of TypeScript here (type safety yay!), an automatic deploy script there - otherwise following the
+standard Screeps setup. So keep in mind that files within `src` must remain in a flat hierarchy, no subfolders allowed. The deployment
+destination path must be defined in the environment in order to prevent leaks of usernames or private server IPs / ports.
 
-- Make sure Node.js is installed
+<br>
 
-- Install dependencies:
+### Setup
 
-  ```
-  npm run ci
-  ```
+Pre-requisites:
 
-- Create a `.env` file with the following contents:
+- The project is cloned to your local computer
+- Node.js (incl. npm) is installed and available (tested with `14.x`)
 
-  ```bash
-  SCREEPS_DEPLOY_PATH=<PATH_TO_SCREEPS_SCRIPTS_SUBFOLDER>
-  ```
+First, install all dependencies by running:
 
-- To push code over to Screeps, run
+```bash
+npm run ci
+```
 
-  ```
-  npm run deploy
-  ```
+Then, create a `.env` file within the project root folder (will be ignored by Git) and add the following contents (replacing variable values):
+
+```bash
+SCREEPS_DEPLOY_PATH=<PATH_TO_SCREEPS_SCRIPTS_SUBFOLDER>
+```
+
+For example:
+
+```bash
+SCREEPS_DEPLOY_PATH=C:/Users/<USERNAME>/AppData/Local/Screeps/scripts/<SERVER>/screeps-bot
+```
+
+<br>
+
+### Build
+
+Build the code (simple TypeScript -> JavaScript transpilation) by running:
+
+```bash
+npm run build
+```
+
+> Note: Build destination is the `dist` folder
+
+<br>
+
+### Deploy
+
+Push the built code over to Screeps by running:
+
+```bash
+npm run deploy
+```
+
+Within Screeps, the new code will be active immediately. Make sure that "screeps-bot" is selected as the branch.
