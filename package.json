@@ -2,6 +2,7 @@
   "name": "screeps-bot",
   "private": true,
   "scripts": {
+    "build": "rimraf dist && tsc --project tsconfig.json",
     "deploy": "node ./tools/deploy.js"
   },
   "devDependencies": {
@@ -12,6 +13,7 @@
     "copy": "0.3.x",
     "del": "6.0.x",
     "dotenv": "16.0.x",
+    "rimraf": "3.0.x",
     "typescript": "4.6.x"
   }
 }

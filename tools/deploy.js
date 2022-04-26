@@ -13,7 +13,7 @@ if (!process.env.SCREEPS_DEPLOY_PATH) {
 const main = async () => {
   await del([process.env.SCREEPS_DEPLOY_PATH], { force: true });
   await new Promise((resolve, reject) => {
-    copy('./src/*.js', process.env.SCREEPS_DEPLOY_PATH, (error) => {
+    copy('./dist/*.js', process.env.SCREEPS_DEPLOY_PATH, (error) => {
       if (error) {
         reject(error);
         return;
