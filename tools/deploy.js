@@ -1,27 +1,38 @@
 require('dotenv').config();
 
 const del = require('del');
-const copy = require('copy');
+const copyfiles = require('copyfiles');
+
+console.log('Deploying screeps bot ...');
 
 // Check pre-requisites
 if (!process.env.SCREEPS_DEPLOY_PATH) {
-  console.error('Environment variable "SCREEPS_DEPLOY_PATH" must be set.');
-  process.exit;
+  console.error('[ERROR] Environment variable "SCREEPS_DEPLOY_PATH" must be set (e.g. within a ".env" file).');
+  process.exit(1);
 }
 
 // Run
-const main = async () => {
-  await del([process.env.SCREEPS_DEPLOY_PATH], { force: true });
-  await new Promise((resolve, reject) => {
-    copy('./dist/*.js', process.env.SCREEPS_DEPLOY_PATH, (error) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-      resolve();
+Promise.resolve()
+  // Cleanup deploy destination
+  .then(() => {
+    return del([process.env.SCREEPS_DEPLOY_PATH], { force: true });
+  })
+  // Copy build files to deploy destination
+  .then(() => {
+    return new Promise((resolve, reject) => {
+      copyfiles(['./dist/*.js', process.env.SCREEPS_DEPLOY_PATH], { up: 1 }, (error) => {
+        if (error) {
+          reject(error.message);
+        }
+        resolve();
+      });
     });
+  })
+  .then(() => {
+    console.log('[SUCCESS] Done!');
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.log('[ERROR] An error occured:', error.message);
+    process.exit(1);
   });
-
-  console.log('Done!');
-};
-main();
