@@ -3,6 +3,7 @@ import { assignHarvestTicket, createHarvestTickets, HarvestTicket } from './tick
 import { assignTransferSpawnTicket, createTransferSpawnTickets, TransferSpawnTicket } from './ticket.transfer-spawn';
 import { assignUpgradeControllerTicket, createUpgradeControllerTickets, UpgradeControllerTicket } from './ticket.upgrade-controller';
 import { assignDefendTicket, DefendTicket } from './ticket.defend';
+import { planRoom } from './plan';
 
 export interface IdleTicket {
   name: 'IDLE';
@@ -21,16 +22,30 @@ export interface FighterEducation {
 export type Education = EnergyWorkerEducation | FighterEducation;
 
 /**
+ * Generate a unique creep name
+ *
+ * Note:
+ * The name does not contain any information regarding what the creep does or is responsible for as creep names are always publicly visible
+ * and could potentially expose confidential information (e.g. if a creep is an attacker)
+ *
+ * @returns Creep name
+ */
+const generateCreepName = (): string => {
+  return `creep#${Game.time}`;
+};
+
+/**
  * Main game loop, executed on every tick
  */
 export const loop = (): void => {
-  console.log('==========');
-
   // Cleanup
   gc();
 
   // TODO: Support for multiple rooms
   const room = Object.values(Game.rooms)[0];
+
+  // WIP: Planning
+  // planRoom(room);
 
   // Ticket Management
   // =================
@@ -120,7 +135,7 @@ export const loop = (): void => {
   // ================
 
   // TODO: Based on avaible tickets (but not all? e.g. harvest only right now?)
-  const desiredNumberOfEnergyWorkerCreeps = 6;
+  const desiredNumberOfEnergyWorkerCreeps = 9;
   const existingNumberOfEnergyWorkerCreeps = Object.values(Game.creeps).filter((creep: Creep) => {
     return creep.memory.education.name === 'ENERGY_WORKER';
   }).length;
@@ -133,10 +148,9 @@ export const loop = (): void => {
       return;
     }
 
-    const energyWorkerName = `energy-worker#${Game.time}`;
     // Cost:                       100   50     50     50    50     = 300
     const energyWorkerBodyParts = [WORK, CARRY, CARRY, MOVE, MOVE];
-    spawn.spawnCreep(energyWorkerBodyParts, energyWorkerName, {
+    spawn.spawnCreep(energyWorkerBodyParts, generateCreepName(), {
       memory: {
         education: {
           name: 'ENERGY_WORKER',
@@ -164,10 +178,9 @@ export const loop = (): void => {
       return;
     }
 
-    const fighterName = `fighter#${Game.time}`;
     // Cost:                  80      50    80      50     = 260
     const fighterBodyParts = [ATTACK, MOVE, ATTACK, MOVE];
-    spawn.spawnCreep(fighterBodyParts, fighterName, {
+    spawn.spawnCreep(fighterBodyParts, generateCreepName(), {
       memory: {
         education: {
           name: 'FIGHTER',
@@ -179,5 +192,5 @@ export const loop = (): void => {
     });
   }
 
-  console.log('==========');
+  console.log('–––––––––––––––––––– [TICK] ––––––––––––––––––––');
 };
