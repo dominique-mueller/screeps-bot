@@ -1,4 +1,4 @@
-import { RoomMap, RoomMapWall } from './plan';
+import { RoomMap, RoomWall } from "./plan.interfaces";
 import { filterPositions, findAdjacentPositionsForPosition, findAdjacentRoomNames, findRoomExitPositions } from './plan.utilities';
 
 /**
@@ -56,7 +56,7 @@ const planExit = (room: Room, roomMap: RoomMap, adjacentRoomName: Room['name']):
 
   // Update room map
   roomMap.walls.push(
-    ...wallPositions.map((wallPosition: RoomPosition): RoomMapWall => {
+    ...wallPositions.map((wallPosition: RoomPosition): RoomWall => {
       return {
         position: wallPosition,
       };

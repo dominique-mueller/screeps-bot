@@ -1,4 +1,4 @@
-import { RoomMap, RoomMapLink, RoomMapRoad, RoomMapSpawn, RoomMapStorage, RoomMapTower } from './plan';
+import { RoomMap, RoomLink, RoomRoad, RoomSpawn, RoomStorage, RoomTower } from "./plan.interfaces";
 import { filterPositions, findAdjacentPositionsForPosition, findAdjacentPositionsForPositions } from './plan.utilities';
 
 // export const getShortestPathToAnyRoomExit = (room: Room, position: RoomPosition): Array<RoomPosition> => {
@@ -27,6 +27,9 @@ import { filterPositions, findAdjacentPositionsForPosition, findAdjacentPosition
  * Plan spawn
  *
  * TODO:
+ * - Place link close to other links
+ *
+ * TODO: Long term
  * - Handle creating new spawn (e.g. capturing additional room)
  *
  * @param   room    Room
@@ -71,7 +74,7 @@ export const planSpawn = (room: Room, roomMap: RoomMap): void => {
       id: initialSpawn.id,
       position: initialSpawn.pos,
     },
-    ...spawnPositions.map((spawnPosition: RoomPosition): RoomMapSpawn => {
+    ...spawnPositions.map((spawnPosition: RoomPosition): RoomSpawn => {
       return {
         dockingPositions: [],
         id: null,
@@ -80,28 +83,28 @@ export const planSpawn = (room: Room, roomMap: RoomMap): void => {
     }),
   );
   roomMap.links.push(
-    ...linkPositions.map((linkPosition: RoomPosition): RoomMapLink => {
+    ...linkPositions.map((linkPosition: RoomPosition): RoomLink => {
       return {
         position: linkPosition,
       };
     }),
   );
   roomMap.towers.push(
-    ...towerPositions.map((towerPosition: RoomPosition): RoomMapTower => {
+    ...towerPositions.map((towerPosition: RoomPosition): RoomTower => {
       return {
         position: towerPosition,
       };
     }),
   );
   roomMap.storages.push(
-    ...storagePositions.map((storagePosition: RoomPosition): RoomMapStorage => {
+    ...storagePositions.map((storagePosition: RoomPosition): RoomStorage => {
       return {
         position: storagePosition,
       };
     }),
   );
   roomMap.roads.push(
-    ...roadPositions.map((adjacentPosition: RoomPosition): RoomMapRoad => {
+    ...roadPositions.map((adjacentPosition: RoomPosition): RoomRoad => {
       return {
         position: adjacentPosition,
         priority: 0,

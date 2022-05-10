@@ -1,4 +1,4 @@
-import { RoomMap, RoomMapMineral, RoomMapRampart, RoomMapRoad, RoomMapSource, RoomMapWall } from './plan';
+import { RoomMap, RoomMineral, RoomRampart, RoomRoad, RoomSource, RoomWall } from "./plan.interfaces";
 import {
   filterPositions,
   findAdjacentRoomNames,
@@ -27,7 +27,7 @@ const planExitRoad = (room: Room, roomMap: RoomMap, adjacentRoomName: Room['name
         room,
         roomMap.baseCenter,
         roomExitPosition,
-        roomMap.roads.map((road: RoomMapRoad): RoomPosition => {
+        roomMap.roads.map((road: RoomRoad): RoomPosition => {
           return road.position;
         }),
         [
@@ -38,14 +38,14 @@ const planExitRoad = (room: Room, roomMap: RoomMap, adjacentRoomName: Room['name
 
           // Ignore positions blocked by sources
           ...flattenArray(
-            roomMap.sources.map((source: RoomMapSource): Array<RoomPosition> => {
+            roomMap.sources.map((source: RoomSource): Array<RoomPosition> => {
               return [source.dockingPosition, source.linkPosition, ...source.otherDockingPositions];
             }),
           ),
 
           // Ignore postions blocked by minerals
           ...flattenArray(
-            roomMap.minerals.map((mineral: RoomMapMineral): Array<RoomPosition> => {
+            roomMap.minerals.map((mineral: RoomMineral): Array<RoomPosition> => {
               return mineral.dockingPositions;
             }),
           ),
@@ -56,26 +56,26 @@ const planExitRoad = (room: Room, roomMap: RoomMap, adjacentRoomName: Room['name
     .slice(1, -1);
   const newRoadPositions: Array<RoomPosition> = filterPositions(
     roadPositions,
-    roomMap.roads.map((road: RoomMapRoad): RoomPosition => {
+    roomMap.roads.map((road: RoomRoad): RoomPosition => {
       return road.position;
     }),
   );
 
   // Open up the wall where the room exit road meets it, and replace it with a wider rampart
   const roadWallCrossingPosition: RoomPosition = newRoadPositions.find((newRoadPosition: RoomPosition): boolean => {
-    return roomMap.walls.some((wall: RoomMapWall): boolean => {
+    return roomMap.walls.some((wall: RoomWall): boolean => {
       return newRoadPosition.isEqualTo(wall.position);
     });
   }) as RoomPosition;
   const roadWallCrossingAdjacentPositions: Array<RoomPosition> = findAdjacentPositionsForPosition(room, roadWallCrossingPosition);
   const updatedWallPositions: Array<RoomPosition> = filterPositions(
-    roomMap.walls.map((wall: RoomMapWall): RoomPosition => {
+    roomMap.walls.map((wall: RoomWall): RoomPosition => {
       return wall.position;
     }),
     [roadWallCrossingPosition, ...roadWallCrossingAdjacentPositions],
   );
   const rampartPositions: Array<RoomPosition> = filterPositions(
-    roomMap.walls.map((wall: RoomMapWall): RoomPosition => {
+    roomMap.walls.map((wall: RoomWall): RoomPosition => {
       return wall.position;
     }),
     updatedWallPositions,
@@ -83,7 +83,7 @@ const planExitRoad = (room: Room, roomMap: RoomMap, adjacentRoomName: Room['name
 
   // Update room map
   roomMap.roads.push(
-    ...newRoadPositions.map((roadPosition: RoomPosition): RoomMapRoad => {
+    ...newRoadPositions.map((roadPosition: RoomPosition): RoomRoad => {
       return {
         position: roadPosition,
         priority: 4,
@@ -91,13 +91,13 @@ const planExitRoad = (room: Room, roomMap: RoomMap, adjacentRoomName: Room['name
     }),
   );
   roomMap.reserved = filterPositions(roomMap.reserved, newRoadPositions);
-  roomMap.walls = updatedWallPositions.map((wallPosition: RoomPosition): RoomMapWall => {
+  roomMap.walls = updatedWallPositions.map((wallPosition: RoomPosition): RoomWall => {
     return {
       position: wallPosition,
     };
   });
   roomMap.ramparts.push(
-    ...rampartPositions.map((rampartPosition): RoomMapRampart => {
+    ...rampartPositions.map((rampartPosition): RoomRampart => {
       return {
         position: rampartPosition,
         priority: 1,

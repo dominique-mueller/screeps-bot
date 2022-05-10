@@ -1,4 +1,4 @@
-import { RoomMap } from './plan';
+import { RoomMap } from "./plan.interfaces";
 import { findAdjacentPositionsForPositionNTimes } from './plan.utilities';
 
 /**

@@ -1,15 +1,15 @@
 import {
   RoomMap,
-  RoomMapLink,
-  RoomMapMineral,
-  RoomMapRampart,
-  RoomMapRoad,
-  RoomMapSource,
-  RoomMapSpawn,
-  RoomMapStorage,
-  RoomMapTower,
-  RoomMapWall,
-} from './plan';
+  RoomLink,
+  RoomMineral,
+  RoomRampart,
+  RoomRoad,
+  RoomSource,
+  RoomSpawn,
+  RoomStorage,
+  RoomTower,
+  RoomWall
+} from "./plan.interfaces";
 
 /**
  * Render room map visualization (DEBUG)
@@ -26,7 +26,7 @@ export const renderRoomMapVisualization = (room: Room, roomMap: RoomMap): void =
   });
 
   // Render spawn
-  roomMap.spawns.forEach((spawn: RoomMapSpawn): void => {
+  roomMap.spawns.forEach((spawn: RoomSpawn): void => {
     room.visual.text('SPAWN', spawn.position.x, spawn.position.y, {
       align: 'center',
       color: 'yellow',
@@ -35,7 +35,7 @@ export const renderRoomMapVisualization = (room: Room, roomMap: RoomMap): void =
   });
 
   // Render tower
-  roomMap.towers.forEach((tower: RoomMapTower): void => {
+  roomMap.towers.forEach((tower: RoomTower): void => {
     room.visual.text('TOWER', tower.position.x, tower.position.y, {
       align: 'center',
       color: 'yellow',
@@ -44,7 +44,7 @@ export const renderRoomMapVisualization = (room: Room, roomMap: RoomMap): void =
   });
 
   // Render storages
-  roomMap.storages.forEach((storage: RoomMapStorage): void => {
+  roomMap.storages.forEach((storage: RoomStorage): void => {
     room.visual.text('STORAGE', storage.position.x, storage.position.y, {
       align: 'center',
       color: 'yellow',
@@ -53,7 +53,7 @@ export const renderRoomMapVisualization = (room: Room, roomMap: RoomMap): void =
   });
 
   // Render links
-  roomMap.links.forEach((link: RoomMapLink): void => {
+  roomMap.links.forEach((link: RoomLink): void => {
     room.visual.text('LINK', link.position.x, link.position.y, {
       align: 'center',
       color: 'yellow',
@@ -76,7 +76,7 @@ export const renderRoomMapVisualization = (room: Room, roomMap: RoomMap): void =
   });
 
   // Render sources
-  roomMap.sources.forEach((source: RoomMapSource): void => {
+  roomMap.sources.forEach((source: RoomSource): void => {
     room.visual.text('DOCK(S)', source.dockingPosition.x, source.dockingPosition.y, {
       align: 'center',
       color: 'yellow',
@@ -92,7 +92,7 @@ export const renderRoomMapVisualization = (room: Room, roomMap: RoomMap): void =
   });
 
   // Render minerals
-  roomMap.minerals.forEach((mineral: RoomMapMineral): void => {
+  roomMap.minerals.forEach((mineral: RoomMineral): void => {
     mineral.dockingPositions.forEach((dockingPosition: RoomPosition): void => {
       room.visual.text('DOCK', dockingPosition.x, dockingPosition.y, {
         align: 'center',
@@ -103,7 +103,7 @@ export const renderRoomMapVisualization = (room: Room, roomMap: RoomMap): void =
   });
 
   // Render roads
-  roomMap.roads.forEach((road: RoomMapRoad): void => {
+  roomMap.roads.forEach((road: RoomRoad): void => {
     room.visual.text(`ROAD(${road.priority})`, road.position.x, road.position.y + 0.2, {
       align: 'center',
       color: 'lightblue',
@@ -112,7 +112,7 @@ export const renderRoomMapVisualization = (room: Room, roomMap: RoomMap): void =
   });
 
   // Render walls
-  roomMap.walls.forEach((wall: RoomMapWall): void => {
+  roomMap.walls.forEach((wall: RoomWall): void => {
     room.visual.text('WALL', wall.position.x, wall.position.y, {
       align: 'center',
       color: 'red',
@@ -121,7 +121,7 @@ export const renderRoomMapVisualization = (room: Room, roomMap: RoomMap): void =
   });
 
   // Render walls
-  roomMap.ramparts.forEach((rampart: RoomMapRampart): void => {
+  roomMap.ramparts.forEach((rampart: RoomRampart): void => {
     room.visual.text(`RAMP(${rampart.priority})`, rampart.position.x, rampart.position.y, {
       align: 'center',
       color: 'red',

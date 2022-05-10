@@ -1,8 +1,7 @@
 import { CONTROLLER_MAX_LEVEL, ROOM_SIZE } from './constants';
-import { RoomMap, RoomMapMineral, RoomMapRampart, RoomMapRoad, RoomMapSource, RoomMapWall } from './plan';
+import { RoomMap, RoomMineral, RoomRampart, RoomRoad, RoomSource, RoomWall } from './plan.interfaces';
 import {
   filterPositions,
-  findAdjacentPositionsForPosition,
   findAdjacentPositionsForPositionNTimes,
   findAdjacentPositionsForPositions,
   isPositionAdjacentToUnavailablePosition,
@@ -92,12 +91,12 @@ export const planExtensions = (room: Room, roomMap: RoomMap): void => {
         ...(rangeIndex === 0 ? flattenArray(basePositions) : basePositions[1]),
 
         // Ignore walls
-        ...roomMap.walls.map((wall: RoomMapWall): RoomPosition => {
+        ...roomMap.walls.map((wall: RoomWall): RoomPosition => {
           return wall.position;
         }),
 
         // Ignore ramparts
-        ...roomMap.ramparts.map((rampart: RoomMapRampart): RoomPosition => {
+        ...roomMap.ramparts.map((rampart: RoomRampart): RoomPosition => {
           return rampart.position;
         }),
 
@@ -108,20 +107,20 @@ export const planExtensions = (room: Room, roomMap: RoomMap): void => {
 
         // Ignore sources
         ...flattenArray(
-          roomMap.sources.map((source: RoomMapSource): Array<RoomPosition> => {
+          roomMap.sources.map((source: RoomSource): Array<RoomPosition> => {
             return [source.dockingPosition, source.linkPosition, ...source.otherDockingPositions];
           }),
         ),
 
         // Ignore minerals
         ...flattenArray(
-          roomMap.minerals.map((mineral: RoomMapMineral): Array<RoomPosition> => {
+          roomMap.minerals.map((mineral: RoomMineral): Array<RoomPosition> => {
             return mineral.dockingPositions;
           }),
         ),
 
         // Ignore roads
-        ...roomMap.roads.map((road: RoomMapRoad): RoomPosition => {
+        ...roomMap.roads.map((road: RoomRoad): RoomPosition => {
           return road.position;
         }),
 
@@ -158,7 +157,7 @@ export const planExtensions = (room: Room, roomMap: RoomMap): void => {
             roomMap.baseCenter,
             ...flattenArray(basePositions),
             ...flattenArray(roadPositionsPerRange),
-            ...roomMap.roads.map((road: RoomMapRoad): RoomPosition => {
+            ...roomMap.roads.map((road: RoomRoad): RoomPosition => {
               return road.position;
             }),
           ],

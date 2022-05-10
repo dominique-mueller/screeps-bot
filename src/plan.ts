@@ -17,75 +17,7 @@ import { planExitRoads } from './plan.exit-roads';
 import { planExtensions } from './plan.extensions';
 import { renderRoomMapVisualization } from './debug';
 import { planExits } from './plan.exits';
-
-export interface RoomMapController {
-  dockingPosition: RoomPosition;
-  id: StructureController['id'];
-  linkPosition: RoomPosition;
-  otherDockingPositions: Array<RoomPosition>;
-  position: RoomPosition;
-}
-
-export interface RoomMapMineral {
-  dockingPositions: Array<RoomPosition>;
-  id: Mineral['id'];
-  position: RoomPosition;
-}
-
-export interface RoomMapRoad {
-  position: RoomPosition;
-  priority: number;
-}
-
-export interface RoomMapSpawn {
-  dockingPositions: Array<RoomPosition>;
-  id: StructureSpawn['id'] | null;
-  position: RoomPosition;
-}
-
-export interface RoomMapSource {
-  dockingPosition: RoomPosition;
-  id: Source['id'];
-  linkPosition: RoomPosition;
-  otherDockingPositions: Array<RoomPosition>;
-  position: RoomPosition;
-}
-
-export interface RoomMapWall {
-  position: RoomPosition;
-}
-
-export interface RoomMapLink {
-  position: RoomPosition;
-}
-
-export interface RoomMapTower {
-  position: RoomPosition;
-}
-
-export interface RoomMapStorage {
-  position: RoomPosition;
-}
-
-export interface RoomMapRampart {
-  position: RoomPosition;
-  priority: number;
-}
-
-export interface RoomMap {
-  baseCenter: RoomPosition;
-  controller: RoomMapController;
-  links: Array<RoomMapLink>;
-  minerals: Array<RoomMapMineral>;
-  ramparts: Array<RoomMapRampart>;
-  reserved: Array<RoomPosition>;
-  roads: Array<RoomMapRoad>;
-  sources: Array<RoomMapSource>;
-  spawns: Array<RoomMapSpawn>;
-  storages: Array<RoomMapStorage>;
-  towers: Array<RoomMapTower>;
-  walls: Array<RoomMapWall>;
-}
+import { RoomMap } from './plan.interfaces';
 
 /**
  * Plan room
@@ -107,6 +39,9 @@ export const planRoom = (room: Room): void => {
   } as any as RoomMap;
 
   // RUN
+  // TODO: How to save building priority (only temp?)
+  // TODO: How to save connections? (e.g. link of source vs. link of XYZ)
+  // TODO: Prevent all that shitty mapping OR make it faster OR cache if ==> PERF!!!!!
   planExits(room, roomMap);
   planSpawn(room, roomMap);
   planController(room, roomMap);
