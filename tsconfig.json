@@ -6,5 +6,6 @@
     "strict": true,
     "target": "es2016"
   },
-  "files": ["src/main.ts", "src/typings.d.ts"]
+  "files": ["src/main.ts", "src/typings.d.ts"],
+  "include": ["src/*.ts"]
 }
