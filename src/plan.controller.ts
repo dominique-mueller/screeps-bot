@@ -1,7 +1,7 @@
-import { RoomMap } from "./plan.interfaces";
+import { SB_Room, SB_RoomPosition } from './plan.interfaces';
 import {
   filterPositions,
-  findAdjacentPositionsForPosition,
+  findAdjacentRoomPositionsForRoomPosition,
   findAdjacentPositionsForPositionNTimes,
   findDirectPathForPlanning,
   sortPathPositionsByLength,
@@ -13,20 +13,24 @@ import {
  * @param room    Room
  * @param roomMap Room map (will be mutated in place)
  */
-export const planController = (room: Room, roomMap: RoomMap): void => {
+export const planController = (room: Room, roomMap: SB_Room): void => {
   // Find controller
   const controller: StructureController = room.controller as StructureController;
 
   // Find controller adjacent positions
-  const controllerAdjacentPositions: Array<Array<RoomPosition>> = findAdjacentPositionsForPositionNTimes(room, controller.pos, 2);
+  const controllerAdjacentPositions: Array<Array<SB_RoomPosition>> = findAdjacentPositionsForPositionNTimes(
+    room,
+    { position: controller.pos },
+    2,
+  );
 
   // Find optimal link position
-  const linkPosition: RoomPosition =
+  const linkPosition: SB_RoomPosition =
     // Start with the transport positions
     controllerAdjacentPositions[1]
       // Find direct paths between transport positions and base link
-      .map((adjacentPosition: RoomPosition): Array<RoomPosition> => {
-        return findDirectPathForPlanning(room, roomMap.links[0].position, adjacentPosition);
+      .map((adjacentPosition: SB_RoomPosition): Array<SB_RoomPosition> => {
+        return findDirectPathForPlanning(room, roomMap.links[0], adjacentPosition);
       })
       // Find shortest path
       .sort(sortPathPositionsByLength)[0]
@@ -34,16 +38,16 @@ export const planController = (room: Room, roomMap: RoomMap): void => {
       .slice(-1)[0];
 
   // Find adjacent link positions
-  const linkAdjacentPositions: Array<RoomPosition> = findAdjacentPositionsForPosition(room, linkPosition);
+  const linkAdjacentPositions: Array<SB_RoomPosition> = findAdjacentRoomPositionsForRoomPosition(room, linkPosition);
 
   // Find docking positions
-  const secondaryDockingPositions: Array<RoomPosition> = filterPositions(controllerAdjacentPositions[0], linkAdjacentPositions);
-  const primaryDockingPositions: Array<RoomPosition> = filterPositions(controllerAdjacentPositions[0], secondaryDockingPositions);
-  const dockingPosition: RoomPosition = primaryDockingPositions[0];
-  const otherDockingPositions: Array<RoomPosition> = [...primaryDockingPositions.slice(1), ...secondaryDockingPositions];
+  const secondaryDockingPositions: Array<SB_RoomPosition> = filterPositions(controllerAdjacentPositions[0], linkAdjacentPositions);
+  const primaryDockingPositions: Array<SB_RoomPosition> = filterPositions(controllerAdjacentPositions[0], secondaryDockingPositions);
+  const dockingPosition: SB_RoomPosition = primaryDockingPositions[0];
+  const otherDockingPositions: Array<SB_RoomPosition> = [...primaryDockingPositions.slice(1), ...secondaryDockingPositions];
 
   // Find reserved positions
-  const reserved: Array<RoomPosition> = [
+  const reserved: Array<SB_RoomPosition> = [
     // Transport positions (except link position)
     ...filterPositions(controllerAdjacentPositions[1], [linkPosition]),
     // Link adjacent positions (except docking positions)
@@ -58,8 +62,6 @@ export const planController = (room: Room, roomMap: RoomMap): void => {
     otherDockingPositions,
     position: controller.pos,
   };
-  roomMap.links.push({
-    position: linkPosition,
-  });
+  roomMap.links.push(linkPosition);
   roomMap.reserved.push(...reserved);
 };

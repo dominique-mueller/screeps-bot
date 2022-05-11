@@ -1,4 +1,4 @@
-import { RoomMap, RoomMineral, RoomRoad, RoomSource, RoomWall } from "./plan.interfaces";
+import { SB_Room, SB_Mineral, SB_Road, SB_Source, SB_Wall, SB_RoomPosition } from './plan.interfaces';
 import { filterPositions, findPathForPlanning } from './plan.utilities';
 import { flattenArray } from './utilities';
 
@@ -9,60 +9,45 @@ import { flattenArray } from './utilities';
  * @param roomMap Room map (will be mutated in place)
  * @param source  Source
  */
-export const planRoadsBetweenSpawnAndSource = (room: Room, roomMap: RoomMap, source: RoomSource): void => {
+export const planRoadsBetweenSpawnAndSource = (room: Room, roomMap: SB_Room, source: SB_Source): void => {
   // Find road positions
-  const roadPositions: Array<RoomPosition> = findPathForPlanning(
-    room,
-    roomMap.baseCenter,
-    source.dockingPosition,
-    roomMap.roads.map((road: RoomRoad): RoomPosition => {
-      return road.position;
-    }),
-    [
-      // Ignore walls
-      ...roomMap.walls.map((wall: RoomWall): RoomPosition => {
-        return wall.position;
-      }),
+  const roadPositions: Array<SB_RoomPosition> = findPathForPlanning(room, roomMap.base, source.dockingPosition, roomMap.roads, [
+    // Ignore walls
+    ...roomMap.walls,
 
-      // Ignore positions blocked by controller
-      roomMap.controller.dockingPosition,
-      roomMap.controller.linkPosition,
-      ...roomMap.controller.otherDockingPositions,
+    // Ignore positions blocked by controller
+    roomMap.controller.dockingPosition,
+    roomMap.controller.linkPosition,
+    ...roomMap.controller.otherDockingPositions,
 
-      // Ignore positions blocked by sources
-      ...filterPositions(
-        flattenArray(
-          roomMap.sources.map((source: RoomSource): Array<RoomPosition> => {
-            return [source.dockingPosition, source.linkPosition, ...source.otherDockingPositions];
-          }),
-        ),
-        // But allow currently used source docking position
-        [source.dockingPosition],
-      ),
-
-      // Ignore postions blocked by minerals
-      ...flattenArray(
-        roomMap.minerals.map((mineral: RoomMineral): Array<RoomPosition> => {
-          return mineral.dockingPositions;
+    // Ignore positions blocked by sources
+    ...filterPositions(
+      flattenArray(
+        roomMap.sources.map((source: SB_Source): Array<SB_RoomPosition> => {
+          return [source.dockingPosition, source.linkPosition, ...source.otherDockingPositions];
         }),
       ),
-    ],
-  )
+      // But allow currently used source docking position
+      [source.dockingPosition],
+    ),
+
+    // Ignore postions blocked by minerals
+    ...flattenArray(
+      roomMap.minerals.map((mineral: SB_Mineral): Array<SB_RoomPosition> => {
+        return mineral.dockingPositions;
+      }),
+    ),
+  ])
     // Ignore base structure positions, ignore source docking position
     .slice(1, -1);
-  const newRoadPositions: Array<RoomPosition> = filterPositions(
-    roadPositions,
-    roomMap.roads.map((road: RoomRoad): RoomPosition => {
-      return road.position;
-    }),
-  );
+  const newRoadPositions: Array<SB_RoomPosition> = filterPositions(roadPositions, roomMap.roads);
 
   // Update room map
   roomMap.roads.push(
-    ...newRoadPositions.map((roadPosition: RoomPosition): RoomRoad => {
+    ...newRoadPositions.map((roadPosition: SB_RoomPosition): SB_Road => {
       return {
-        position: roadPosition,
-        priority: 1,
+        ...roadPosition,
+        buildPriority: 1,
       };
     }),
   );
@@ -76,20 +61,16 @@ export const planRoadsBetweenSpawnAndSource = (room: Room, roomMap: RoomMap, sou
  * @param roomMap Room map (will be mutated in place)
  * @param source  Source
  */
-export const planRoadsBetweenControllerAndSource = (room: Room, roomMap: RoomMap, source: RoomSource): void => {
+export const planRoadsBetweenControllerAndSource = (room: Room, roomMap: SB_Room, source: SB_Source): void => {
   // Find road positions
-  const roadPositions: Array<RoomPosition> = findPathForPlanning(
+  const roadPositions: Array<SB_RoomPosition> = findPathForPlanning(
     room,
     roomMap.controller.dockingPosition,
     source.dockingPosition,
-    roomMap.roads.map((road: RoomRoad): RoomPosition => {
-      return road.position;
-    }),
+    roomMap.roads,
     [
       // Ignore walls
-      ...roomMap.walls.map((wall: RoomWall): RoomPosition => {
-        return wall.position;
-      }),
+      ...roomMap.walls,
 
       // Ignore positions blocked by controller (except docking position itself)
       roomMap.controller.linkPosition,
@@ -98,7 +79,7 @@ export const planRoadsBetweenControllerAndSource = (room: Room, roomMap: RoomMap
       // Ignore positions blocked by sources
       ...filterPositions(
         flattenArray(
-          roomMap.sources.map((source: RoomSource): Array<RoomPosition> => {
+          roomMap.sources.map((source: SB_Source): Array<SB_RoomPosition> => {
             return [source.dockingPosition, source.linkPosition, ...source.otherDockingPositions];
           }),
         ),
@@ -108,7 +89,7 @@ export const planRoadsBetweenControllerAndSource = (room: Room, roomMap: RoomMap
 
       // Ignore postions blocked by minerals
       ...flattenArray(
-        roomMap.minerals.map((mineral: RoomMineral): Array<RoomPosition> => {
+        roomMap.minerals.map((mineral: SB_Mineral): Array<SB_RoomPosition> => {
           return mineral.dockingPositions;
         }),
       ),
@@ -116,19 +97,14 @@ export const planRoadsBetweenControllerAndSource = (room: Room, roomMap: RoomMap
   )
     // Ignore source docking position
     .slice(0, -1);
-  const newRoadPositions: Array<RoomPosition> = filterPositions(
-    roadPositions,
-    roomMap.roads.map((road: RoomRoad): RoomPosition => {
-      return road.position;
-    }),
-  );
+  const newRoadPositions: Array<SB_RoomPosition> = filterPositions(roadPositions, roomMap.roads);
 
   // Update room map
   roomMap.roads.push(
-    ...newRoadPositions.map((roadPosition: RoomPosition): RoomRoad => {
+    ...newRoadPositions.map((roadPosition: SB_RoomPosition): SB_Road => {
       return {
-        position: roadPosition,
-        priority: 2,
+        ...roadPosition,
+        buildPriority: 2,
       };
     }),
   );
@@ -141,14 +117,14 @@ export const planRoadsBetweenControllerAndSource = (room: Room, roomMap: RoomMap
  * @param room    Room
  * @param roomMap Room map (will be mutated in place)
  */
-export const planRoads = (room: Room, roomMap: RoomMap): void => {
+export const planRoads = (room: Room, roomMap: SB_Room): void => {
   // Plan roads between base and sources
-  roomMap.sources.forEach((source: RoomSource): void => {
+  roomMap.sources.forEach((source: SB_Source): void => {
     planRoadsBetweenSpawnAndSource(room, roomMap, source);
   });
 
   // Plan roads between controller and sources
-  roomMap.sources.forEach((source: RoomSource): void => {
+  roomMap.sources.forEach((source: SB_Source): void => {
     planRoadsBetweenControllerAndSource(room, roomMap, source);
   });
 };

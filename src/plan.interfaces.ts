@@ -1,101 +1,103 @@
 /**
- * Room Controller
+ * Id
  */
-export interface RoomController {
-  dockingPosition: RoomPosition;
-  id: StructureController['id'];
-  linkPosition: RoomPosition;
-  otherDockingPositions: Array<RoomPosition>;
+export interface SB_Id<T extends _HasId = any> {
+  id: Id<T> | null;
+}
+
+/**
+ * Room Position
+ */
+export interface SB_RoomPosition {
   position: RoomPosition;
 }
 
 /**
- * Room Spawn
+ * Build Priority
  */
-export interface RoomSpawn {
-  dockingPositions: Array<RoomPosition>;
-  id: StructureSpawn['id'] | null;
-  position: RoomPosition;
+export interface SB_BuildPriority {
+  buildPriority: number;
 }
 
 /**
- * Room Source
+ * Controller
  */
-export interface RoomSource {
-  dockingPosition: RoomPosition;
-  id: Source['id'];
-  linkPosition: RoomPosition;
-  otherDockingPositions: Array<RoomPosition>;
-  position: RoomPosition;
+export interface SB_Controller extends SB_Id<StructureController>, SB_RoomPosition {
+  dockingPosition: SB_RoomPosition;
+  linkPosition: SB_RoomPosition;
+  otherDockingPositions: Array<SB_RoomPosition>;
 }
 
 /**
- * Room Mineral
+ * Spawn
  */
-export interface RoomMineral {
-  dockingPositions: Array<RoomPosition>;
-  id: Mineral['id'];
-  position: RoomPosition;
+export interface SB_Spawn extends SB_Id<StructureSpawn>, SB_RoomPosition {}
+
+/**
+ * Source
+ */
+export interface SB_Source extends SB_Id<Source>, SB_RoomPosition {
+  dockingPosition: SB_RoomPosition;
+  linkPosition: SB_RoomPosition;
+  otherDockingPositions: Array<SB_RoomPosition>;
 }
 
 /**
- * Room Road
+ * Mineral
  */
-export interface RoomRoad {
-  position: RoomPosition;
-  priority: number;
+export interface SB_Mineral extends SB_Id<Mineral>, SB_RoomPosition {
+  dockingPositions: Array<SB_RoomPosition>;
 }
 
 /**
- * Room Link
+ * Road
  */
-export interface RoomLink {
-  position: RoomPosition;
-}
+export interface SB_Road extends SB_RoomPosition, SB_BuildPriority {}
 
 /**
- * Room Tower
+ * Link
  */
-export interface RoomTower {
-  position: RoomPosition;
-}
+export interface SB_Link extends SB_RoomPosition {}
 
 /**
- * Room Storage
+ * Tower
  */
-export interface RoomStorage {
-  position: RoomPosition;
-}
+export interface SB_Tower extends SB_RoomPosition {}
 
 /**
- * Room Wall
+ * Storage
  */
-export interface RoomWall {
-  position: RoomPosition;
-}
+export interface SB_Storage extends SB_RoomPosition {}
 
 /**
- * Room Rampart
+ * Wall
  */
-export interface RoomRampart {
-  position: RoomPosition;
-  priority: number;
-}
+export interface SB_Wall extends SB_RoomPosition {}
 
 /**
- * Room Map
+ * Rampart
  */
-export interface RoomMap {
-  baseCenter: RoomPosition;
-  controller: RoomController;
-  links: Array<RoomLink>;
-  minerals: Array<RoomMineral>;
-  ramparts: Array<RoomRampart>;
-  reserved: Array<RoomPosition>;
-  roads: Array<RoomRoad>;
-  sources: Array<RoomSource>;
-  spawns: Array<RoomSpawn>;
-  storages: Array<RoomStorage>;
-  towers: Array<RoomTower>;
-  walls: Array<RoomWall>;
+export interface SB_Rampart extends SB_RoomPosition, SB_BuildPriority {}
+
+/**
+ * Base
+ */
+export interface SB_Base extends SB_RoomPosition {}
+
+/**
+ * Room
+ */
+export interface SB_Room {
+  base: SB_Base;
+  controller: SB_Controller;
+  links: Array<SB_Link>;
+  minerals: Array<SB_Mineral>;
+  ramparts: Array<SB_Rampart>;
+  reserved: Array<SB_RoomPosition>;
+  roads: Array<SB_Road>;
+  sources: Array<SB_Source>;
+  spawns: Array<SB_Spawn>;
+  storages: Array<SB_Storage>;
+  towers: Array<SB_Tower>;
+  walls: Array<SB_Wall>;
 }

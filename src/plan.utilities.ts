@@ -1,5 +1,6 @@
 import { ROOM_SIZE } from './constants';
 import { ADJACENT_POSITIONS_OFFSETS } from './plan.constants';
+import { SB_RoomPosition } from './plan.interfaces';
 
 /**
  * Find adjacent room names based on the given room
@@ -29,41 +30,49 @@ export const findAdjacentRoomNames = (room: Room): Array<Room['name']> => {
  * @param   adjacentRoomName Adjacent room name (room must exist!)
  * @returns                  List of room exit positions
  */
-export const findRoomExitPositions = (room: Room, adjacentRoomName: Room['name']): Array<RoomPosition> => {
+export const findRoomExitPositions = (room: Room, adjacentRoomName: Room['name']): Array<SB_RoomPosition> => {
   return (
-    // Query for exit positions
-    room.find(
-      // Find exit position query
-      room.findExitTo(adjacentRoomName) as ExitConstant, // Calculated, so we assume it exists
-    )
+    room
+      // Query for exit positions
+      .find(
+        // Find exit position query
+        room.findExitTo(adjacentRoomName) as ExitConstant, // Calculated, so we assume it exists
+      )
+
+      // Map to room position
+      .map((roomExitPosition: RoomPosition): SB_RoomPosition => {
+        return {
+          position: roomExitPosition,
+        };
+      })
   );
 };
 
 /**
- * Check if the given position is available (e.g. not a wall)
+ * Check if the given room position is available (e.g. not a wall)
  *
- * @param   room     Room
- * @param   position Position
- * @returns          Flag, describing whether the position is available or not
+ * @param   room         Room
+ * @param   roomPosition Room position
+ * @returns              Flag, describing whether the position is available or not
  */
-export const isPositionAvailable = (room: Room, position: RoomPosition): boolean => {
+export const isPositionAvailable = (room: Room, roomPosition: SB_RoomPosition): boolean => {
   return (
     room
       // Get room terrain
       .getTerrain()
       // Check room terrain for position
-      .get(position.x, position.y) !== TERRAIN_MASK_WALL
+      .get(roomPosition.position.x, roomPosition.position.y) !== TERRAIN_MASK_WALL
   );
 };
 
 /**
- * Check if the given position is adjacent to an unavailable position (e.g. wall)
+ * Check if the given room position is adjacent to an unavailable position (e.g. wall)
  *
- * @param   room     Room
- * @param   position Position
- * @returns          Flag, describing whether the given position is adjacent to an unavailable position
+ * @param   room         Room
+ * @param   roomPosition Room position
+ * @returns              Flag, describing whether the given position is adjacent to an unavailable position
  */
-export const isPositionAdjacentToUnavailablePosition = (room: Room, position: RoomPosition): boolean => {
+export const isPositionAdjacentToUnavailablePosition = (room: Room, roomPosition: SB_RoomPosition): boolean => {
   // Find adjacent positions
   let isPositionAdjacentToUnavailablePosition = false;
   for (
@@ -73,12 +82,12 @@ export const isPositionAdjacentToUnavailablePosition = (room: Room, position: Ro
   ) {
     // Find adjacent position
     const adjacentPosition: RoomPosition | null = room.getPositionAt(
-      position.x + ADJACENT_POSITIONS_OFFSETS[adjacentPositionOffsetIndex][0],
-      position.y + ADJACENT_POSITIONS_OFFSETS[adjacentPositionOffsetIndex][1],
+      roomPosition.position.x + ADJACENT_POSITIONS_OFFSETS[adjacentPositionOffsetIndex][0],
+      roomPosition.position.y + ADJACENT_POSITIONS_OFFSETS[adjacentPositionOffsetIndex][1],
     );
 
     // Ignore position if it does not exist (e.g. outside room) or is not available (e.g. wall)
-    if (adjacentPosition === null || !isPositionAvailable(room, adjacentPosition)) {
+    if (adjacentPosition === null || !isPositionAvailable(room, { position: adjacentPosition })) {
       isPositionAdjacentToUnavailablePosition = true;
       break; // Early exit
     }
@@ -89,20 +98,23 @@ export const isPositionAdjacentToUnavailablePosition = (room: Room, position: Ro
 };
 
 /**
- * Filter positions
+ * Filter room positions
  *
- * @param   positions            List of positions
- * @param   positionsToFilterOut List of positions to filter out
- * @returns                      List of filtered positions
+ * @param   roomPositions            List of room positions
+ * @param   roomPositionsToFilterOut List of room positions to filter out
+ * @returns                          List of filtered room positions
  */
-export const filterPositions = (positions: Array<RoomPosition>, positionsToFilterOut: Array<RoomPosition>): Array<RoomPosition> => {
+export const filterPositions = (
+  roomPositions: Array<SB_RoomPosition>,
+  roomPositionsToFilterOut: Array<SB_RoomPosition>,
+): Array<SB_RoomPosition> => {
   // For each position
-  const filteredPositions: Array<RoomPosition> = [];
-  for (let positionIndex = 0; positionIndex < positions.length; positionIndex++) {
+  const filteredPositions: Array<SB_RoomPosition> = [];
+  for (let positionIndex = 0; positionIndex < roomPositions.length; positionIndex++) {
     // Check if the position also exists within the list of positions to be filtered out
     let shouldPositionBeFilteredOut: boolean = false;
-    for (let positionToFilterOutIndex = 0; positionToFilterOutIndex < positionsToFilterOut.length; positionToFilterOutIndex++) {
-      if (positions[positionIndex].isEqualTo(positionsToFilterOut[positionToFilterOutIndex])) {
+    for (let positionToFilterOutIndex = 0; positionToFilterOutIndex < roomPositionsToFilterOut.length; positionToFilterOutIndex++) {
+      if (roomPositions[positionIndex].position.isEqualTo(roomPositionsToFilterOut[positionToFilterOutIndex].position)) {
         shouldPositionBeFilteredOut = true;
         break; // Early exit
       }
@@ -114,7 +126,7 @@ export const filterPositions = (positions: Array<RoomPosition>, positionsToFilte
     }
 
     // Save position
-    filteredPositions.push(positions[positionIndex]);
+    filteredPositions.push(roomPositions[positionIndex]);
   }
 
   // Done
@@ -124,13 +136,13 @@ export const filterPositions = (positions: Array<RoomPosition>, positionsToFilte
 /**
  * Find adjacent positions for the given position
  *
- * @param   room     Room
- * @param   position Position
- * @returns          List of adjacent positions (no duplicates)
+ * @param   room         Room
+ * @param   roomPosition Room position
+ * @returns              List of adjacent room positions (no duplicates)
  */
-export const findAdjacentPositionsForPosition = (room: Room, position: RoomPosition): Array<RoomPosition> => {
+export const findAdjacentRoomPositionsForRoomPosition = (room: Room, roomPosition: SB_RoomPosition): Array<SB_RoomPosition> => {
   // Find adjacent positionss
-  const adjacentPositions: Array<RoomPosition> = [];
+  const adjacentPositions: Array<SB_RoomPosition> = [];
   for (
     let adjacentPositionOffsetIndex = 0;
     adjacentPositionOffsetIndex < ADJACENT_POSITIONS_OFFSETS.length;
@@ -138,17 +150,17 @@ export const findAdjacentPositionsForPosition = (room: Room, position: RoomPosit
   ) {
     // Find adjacent position
     const adjacentPosition: RoomPosition | null = room.getPositionAt(
-      position.x + ADJACENT_POSITIONS_OFFSETS[adjacentPositionOffsetIndex][0],
-      position.y + ADJACENT_POSITIONS_OFFSETS[adjacentPositionOffsetIndex][1],
+      roomPosition.position.x + ADJACENT_POSITIONS_OFFSETS[adjacentPositionOffsetIndex][0],
+      roomPosition.position.y + ADJACENT_POSITIONS_OFFSETS[adjacentPositionOffsetIndex][1],
     );
 
     // Ignore position if it does not exist (e.g. outside room) or is not available (e.g. wall)
-    if (adjacentPosition === null || !isPositionAvailable(room, adjacentPosition)) {
+    if (adjacentPosition === null || !isPositionAvailable(room, { position: adjacentPosition })) {
       continue;
     }
 
     // Save position
-    adjacentPositions.push(adjacentPosition);
+    adjacentPositions.push({ position: adjacentPosition });
   }
 
   // Done
@@ -156,25 +168,25 @@ export const findAdjacentPositionsForPosition = (room: Room, position: RoomPosit
 };
 
 /**
- * Find adjacent positions for the given positions
+ * Find adjacent room positions for the given room positions
  *
- * @param   room      Room
- * @param   positions List of positions
- * @returns           List of adjacent positions (no duplicates)
+ * @param   room          Room
+ * @param   roomPositions List of room positions
+ * @returns               List of room adjacent positions (no duplicates)
  */
-export const findAdjacentPositionsForPositions = (room: Room, positions: Array<RoomPosition>): Array<RoomPosition> => {
+export const findAdjacentRoomPositionsForRoomPositions = (room: Room, roomPositions: Array<SB_RoomPosition>): Array<SB_RoomPosition> => {
   // Find adjacent positions
-  const adjacentPositions: Array<RoomPosition> = [];
-  for (let positionIndex = 0; positionIndex < positions.length; positionIndex++) {
+  const adjacentPositions: Array<SB_RoomPosition> = [];
+  for (let positionIndex = 0; positionIndex < roomPositions.length; positionIndex++) {
     // Save positions
     adjacentPositions.push(
       // Prevent duplicates
       ...filterPositions(
         // Find adjacent positions
-        findAdjacentPositionsForPosition(room, positions[positionIndex]),
+        findAdjacentRoomPositionsForRoomPosition(room, roomPositions[positionIndex]),
         [
           // Ignore given positions, ignore already found adjacent positions
-          ...positions,
+          ...roomPositions,
           // Ignore already found adjacent positions
           ...adjacentPositions,
         ],
@@ -192,14 +204,18 @@ export const findAdjacentPositionsForPositions = (room: Room, positions: Array<R
  * Note:
  * Only use when n > 1, else use "findAdjacentPositionsForPositions" directly
  *
- * @param   room     Room
- * @param   position Position
- * @param   n        Number of times to find adjacent positions (ideally above 1)
- * @returns          List of positions (no duplicates) split into lists by n (ascending)
+ * @param   room         Room
+ * @param   roomPosition Room position
+ * @param   n            Number of times to find adjacent room positions (ideally above 1)
+ * @returns              List of room positions (no duplicates) split into lists by n (ascending)
  */
-export const findAdjacentPositionsForPositionNTimes = (room: Room, position: RoomPosition, n: number): Array<Array<RoomPosition>> => {
+export const findAdjacentPositionsForPositionNTimes = (
+  room: Room,
+  roomPosition: SB_RoomPosition,
+  n: number,
+): Array<Array<SB_RoomPosition>> => {
   // Find adjacent positions n times
-  const adjacentPositions: Array<Array<RoomPosition>> = [];
+  const adjacentPositions: Array<Array<SB_RoomPosition>> = [];
   for (let nIndex = 0; nIndex < n; nIndex++) {
     // Save adjacent positions for range / wave n
     adjacentPositions[nIndex] =
@@ -207,10 +223,10 @@ export const findAdjacentPositionsForPositionNTimes = (room: Room, position: Roo
       filterPositions(
         // Find next adjacent positions based on the previous list of adjacent positions,
         // or based on the original position in the first iteration
-        findAdjacentPositionsForPositions(room, adjacentPositions[nIndex - 1] || [position]),
+        findAdjacentRoomPositionsForRoomPositions(room, adjacentPositions[nIndex - 1] || [roomPosition]),
         // Ignore previous-previous list of adjacent positions (previous list of adjacent positions already ignored by default),
         // or the original position in the first iteration
-        adjacentPositions[nIndex - 2] || [position],
+        adjacentPositions[nIndex - 2] || [roomPosition],
       );
   }
 
@@ -220,14 +236,18 @@ export const findAdjacentPositionsForPositionNTimes = (room: Room, position: Roo
 
 // TODO: Check for refactor ...
 
-export const findDirectPathForPlanning = (room: Room, startPosition: RoomPosition, endPosition: RoomPosition): Array<RoomPosition> => {
+export const findDirectPathForPlanning = (
+  room: Room,
+  startRoomPosition: SB_RoomPosition,
+  endRoomPosition: SB_RoomPosition,
+): Array<SB_RoomPosition> => {
   // Configuration
   const cost: number = 1; // Same cost for every position
 
   // Find path
   return (
     room
-      .findPath(startPosition, endPosition, {
+      .findPath(startRoomPosition.position, endRoomPosition.position, {
         costCallback: (_roomName: string, costMatrix: CostMatrix): CostMatrix => {
           for (let x = 0; x < ROOM_SIZE; x++) {
             for (let y = 0; y < ROOM_SIZE; y++) {
@@ -243,8 +263,8 @@ export const findDirectPathForPlanning = (room: Room, startPosition: RoomPositio
         swampCost: cost,
       })
       // TODO: Move into separate fn?
-      .map((pathStep: PathStep): RoomPosition => {
-        return room.getPositionAt(pathStep.x, pathStep.y) as RoomPosition; // Calculated, so must exist
+      .map((pathStep: PathStep): SB_RoomPosition => {
+        return { position: room.getPositionAt(pathStep.x, pathStep.y) as RoomPosition }; // Calculated, so must exist
       })
   );
 };
@@ -252,20 +272,20 @@ export const findDirectPathForPlanning = (room: Room, startPosition: RoomPositio
 /**
  * Find path for planning purposes (custom path finding configuration, custom cost matrix)
  *
- * @param   room               Room
- * @param   startPosition      Start position
- * @param   endPosition        End position
- * @param   preferredPositions Preferred positions (e.g. roads)
- * @param   blockedPositions   Blocked positions (e.g. next to sources)
- * @returns                    List of path postions (empty if not reachable)
+ * @param   room                   Room
+ * @param   startRoomPosition      Start room position
+ * @param   endRoomPosition        End room position
+ * @param   preferredRoomPositions Preferred room positions (e.g. roads)
+ * @param   blockedRoomPositions   Blocked room positions (e.g. next to sources)
+ * @returns                        List of path room postions (empty if not reachable)
  */
 export const findPathForPlanning = (
   room: Room,
-  startPosition: RoomPosition,
-  endPosition: RoomPosition,
-  preferredPositions: Array<RoomPosition>,
-  blockedPositions: Array<RoomPosition>,
-): Array<RoomPosition> => {
+  startRoomPosition: SB_RoomPosition,
+  endRoomPosition: SB_RoomPosition,
+  preferredRoomPositions: Array<SB_RoomPosition>,
+  blockedRoomPositions: Array<SB_RoomPosition>,
+): Array<SB_RoomPosition> => {
   // Configuration
   const roadCost: number = 1; // Minimum cost
   const terrainCost: number = roadCost * 2; // Twice as expensive
@@ -274,13 +294,13 @@ export const findPathForPlanning = (
   // Find path
   return (
     room
-      .findPath(startPosition, endPosition, {
+      .findPath(startRoomPosition.position, endRoomPosition.position, {
         costCallback: (_roomName: string, costMatrix: CostMatrix): CostMatrix => {
-          preferredPositions.forEach((road: RoomPosition): void => {
-            costMatrix.set(road.x, road.y, roadCost);
+          preferredRoomPositions.forEach((preferredRoomPosition: SB_RoomPosition): void => {
+            costMatrix.set(preferredRoomPosition.position.x, preferredRoomPosition.position.y, roadCost);
           });
-          blockedPositions.forEach((blockedPosition: RoomPosition): void => {
-            costMatrix.set(blockedPosition.x, blockedPosition.y, blockedCost);
+          blockedRoomPositions.forEach((blockedRoomPosition: SB_RoomPosition): void => {
+            costMatrix.set(blockedRoomPosition.position.x, blockedRoomPosition.position.y, blockedCost);
           });
           return costMatrix;
         },
@@ -291,8 +311,8 @@ export const findPathForPlanning = (
         swampCost: terrainCost, // Ignore terrain, but allow planned roads to be twice as fast
       })
       // TODO: Move into separate fn?
-      .map((pathStep: PathStep): RoomPosition => {
-        return room.getPositionAt(pathStep.x, pathStep.y) as RoomPosition; // Calculated, so must exist
+      .map((pathStep: PathStep): SB_RoomPosition => {
+        return { position: room.getPositionAt(pathStep.x, pathStep.y) as RoomPosition }; // Calculated, so must exist
       })
   );
 };
@@ -300,11 +320,11 @@ export const findPathForPlanning = (
 /**
  * Sort path positions by length
  *
- * @param   pathA Path positions A
- * @param   pathB Path positions B
+ * @param   pathA Path room positions A
+ * @param   pathB Path room positions B
  * @returns       Sorting result
  */
-export const sortPathPositionsByLength = (pathA: Array<RoomPosition>, pathB: Array<RoomPosition>): number => {
+export const sortPathPositionsByLength = (pathA: Array<SB_RoomPosition>, pathB: Array<SB_RoomPosition>): number => {
   return pathA.length - pathB.length;
 };
 
@@ -314,6 +334,9 @@ export const sortPathPositionsByLength = (pathA: Array<RoomPosition>, pathB: Arr
  * @param   paths Paths (lists of room positions)
  * @returns       Shortest path (list of room positions)
  */
-export const findShortestPath = (paths: Array<Array<RoomPosition>>): Array<RoomPosition> => {
-  return paths.sort(sortPathPositionsByLength)[0]; // Take the shortest path
+export const findShortestPath = (paths: Array<Array<SB_RoomPosition>>): Array<SB_RoomPosition> => {
+  return (
+    // Sort by path length
+    paths.sort(sortPathPositionsByLength)[0] // Take the shortest path
+  );
 };

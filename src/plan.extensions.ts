@@ -1,9 +1,9 @@
 import { CONTROLLER_MAX_LEVEL, ROOM_SIZE } from './constants';
-import { RoomMap, RoomMineral, RoomRampart, RoomRoad, RoomSource, RoomWall } from './plan.interfaces';
+import { SB_Room, SB_Mineral, SB_Rampart, SB_Road, SB_Source, SB_Wall, SB_RoomPosition } from './plan.interfaces';
 import {
   filterPositions,
   findAdjacentPositionsForPositionNTimes,
-  findAdjacentPositionsForPositions,
+  findAdjacentRoomPositionsForRoomPositions,
   isPositionAdjacentToUnavailablePosition,
 } from './plan.utilities';
 import { flattenArray } from './utilities';
@@ -12,13 +12,13 @@ import { flattenArray } from './utilities';
  * Check if the given position should be a road based on the spawn position and the building pattern ("plus-pattern" for optimal balance
  * between density and reachability)
  *
- * @param   position      Position
- * @param   spawnPosition Spawn position
- * @returns               Flag, describing whether the position should be a road or a structure
+ * @param   roomPosition      Room position
+ * @param   baseRoomPosition Spawn room position
+ * @returns                   Flag, describing whether the position should be a road or a structure
  */
-const shouldBeRoadBasedOnBuildingPattern = (position: RoomPosition, spawnPosition: RoomPosition): boolean => {
-  const verticalDistance: number = Math.abs(position.x - spawnPosition.x);
-  const horizontalDistance: number = Math.abs(position.y - spawnPosition.y);
+const shouldBeRoadBasedOnBuildingPattern = (roomPosition: SB_RoomPosition, baseRoomPosition: SB_RoomPosition): boolean => {
+  const verticalDistance: number = Math.abs(roomPosition.position.x - baseRoomPosition.position.x);
+  const horizontalDistance: number = Math.abs(roomPosition.position.y - baseRoomPosition.position.y);
   const isPositionOnGrid =
     (verticalDistance % 2 === 0 && horizontalDistance % 2 === 0) || (verticalDistance % 2 === 1 && horizontalDistance % 2 === 1);
   const isPositionCenterOfPlus =
@@ -29,20 +29,20 @@ const shouldBeRoadBasedOnBuildingPattern = (position: RoomPosition, spawnPositio
 
 const isPositionReachableViaAllowedPositions = (
   room: Room,
-  startPosition: RoomPosition,
-  endPosition: RoomPosition,
-  allowedPositions: Array<RoomPosition>,
+  startRoomPosition: SB_RoomPosition,
+  endRoomPosition: SB_RoomPosition,
+  allowedRoomPositions: Array<SB_RoomPosition>,
 ): boolean => {
   return (
-    room.findPath(startPosition, endPosition, {
+    room.findPath(startRoomPosition.position, endRoomPosition.position, {
       costCallback: (_roomName: string, costMatrix: CostMatrix): CostMatrix => {
         for (let x = 0; x < ROOM_SIZE; x++) {
           for (let y = 0; y < ROOM_SIZE; y++) {
             costMatrix.set(x, y, 255); // MAX
           }
         }
-        allowedPositions.forEach((allowedPosition: RoomPosition) => {
-          costMatrix.set(allowedPosition.x, allowedPosition.y, 1);
+        allowedRoomPositions.forEach((allowedPosition: SB_RoomPosition): void => {
+          costMatrix.set(allowedPosition.position.x, allowedPosition.position.y, 1);
         });
         return costMatrix;
       },
@@ -61,15 +61,15 @@ const isPositionReachableViaAllowedPositions = (
  * @param room    Room
  * @param roomMap Room map (will be mutated in place)
  */
-export const planExtensions = (room: Room, roomMap: RoomMap): void => {
+export const planExtensions = (room: Room, roomMap: SB_Room): void => {
   const desiredNumberOfStructures: number = CONTROLLER_STRUCTURES[STRUCTURE_EXTENSION][CONTROLLER_MAX_LEVEL];
 
   // TODO: Better way of determining base setup size??
-  const basePositions: Array<Array<RoomPosition>> = findAdjacentPositionsForPositionNTimes(room, roomMap.baseCenter, 2);
+  const basePositions: Array<Array<SB_RoomPosition>> = findAdjacentPositionsForPositionNTimes(room, roomMap.base, 2);
 
   // Find road and structure positions
-  const extensionPositionsPerRange: Array<Array<RoomPosition>> = [];
-  const roadPositionsPerRange: Array<Array<RoomPosition>> = [];
+  const extensionPositionsPerRange: Array<Array<SB_RoomPosition>> = [];
+  const roadPositionsPerRange: Array<Array<SB_RoomPosition>> = [];
   let rangeIndex = 0;
   while (flattenArray(extensionPositionsPerRange).length < desiredNumberOfStructures) {
     // Prepare for results
@@ -77,8 +77,8 @@ export const planExtensions = (room: Room, roomMap: RoomMap): void => {
     extensionPositionsPerRange[rangeIndex] = [];
 
     // Find next adjacent positions
-    const adjacentPositions: Array<RoomPosition> = filterPositions(
-      findAdjacentPositionsForPositions(
+    const adjacentPositions: Array<SB_RoomPosition> = filterPositions(
+      findAdjacentRoomPositionsForRoomPositions(
         room,
         rangeIndex === 0 ? basePositions[1] : [...extensionPositionsPerRange[rangeIndex - 1], ...roadPositionsPerRange[rangeIndex - 1]],
       ),
@@ -91,14 +91,10 @@ export const planExtensions = (room: Room, roomMap: RoomMap): void => {
         ...(rangeIndex === 0 ? flattenArray(basePositions) : basePositions[1]),
 
         // Ignore walls
-        ...roomMap.walls.map((wall: RoomWall): RoomPosition => {
-          return wall.position;
-        }),
+        ...roomMap.walls,
 
         // Ignore ramparts
-        ...roomMap.ramparts.map((rampart: RoomRampart): RoomPosition => {
-          return rampart.position;
-        }),
+        ...roomMap.ramparts,
 
         // Ignore controller
         roomMap.controller.dockingPosition,
@@ -107,22 +103,20 @@ export const planExtensions = (room: Room, roomMap: RoomMap): void => {
 
         // Ignore sources
         ...flattenArray(
-          roomMap.sources.map((source: RoomSource): Array<RoomPosition> => {
+          roomMap.sources.map((source: SB_Source): Array<SB_RoomPosition> => {
             return [source.dockingPosition, source.linkPosition, ...source.otherDockingPositions];
           }),
         ),
 
         // Ignore minerals
         ...flattenArray(
-          roomMap.minerals.map((mineral: RoomMineral): Array<RoomPosition> => {
+          roomMap.minerals.map((mineral: SB_Mineral): Array<SB_RoomPosition> => {
             return mineral.dockingPositions;
           }),
         ),
 
         // Ignore roads
-        ...roomMap.roads.map((road: RoomRoad): RoomPosition => {
-          return road.position;
-        }),
+        ...roomMap.roads,
 
         // Ignore reserved
         ...roomMap.reserved,
@@ -138,7 +132,7 @@ export const planExtensions = (room: Room, roomMap: RoomMap): void => {
 
       // Save as road OR extension
       // ... based on pattern
-      const shouldBeRoad: boolean = shouldBeRoadBasedOnBuildingPattern(adjacentPositions[adjacentPositionsIndex], roomMap.baseCenter);
+      const shouldBeRoad: boolean = shouldBeRoadBasedOnBuildingPattern(adjacentPositions[adjacentPositionsIndex], roomMap.base);
       // ... while avoiding roads that touch unavailable places (e.g. walls) to maximize road efficiency
       const isAdjacentToUnavailablePosition: boolean = isPositionAdjacentToUnavailablePosition(
         room,
@@ -152,14 +146,12 @@ export const planExtensions = (room: Room, roomMap: RoomMap): void => {
         const isReachableViaRoadPositions = isPositionReachableViaAllowedPositions(
           room,
           adjacentPositions[adjacentPositionsIndex],
-          roomMap.baseCenter,
+          roomMap.base,
           [
-            roomMap.baseCenter,
+            roomMap.base,
             ...flattenArray(basePositions),
             ...flattenArray(roadPositionsPerRange),
-            ...roomMap.roads.map((road: RoomRoad): RoomPosition => {
-              return road.position;
-            }),
+            ...roomMap.roads,
           ],
         );
 
@@ -182,15 +174,15 @@ export const planExtensions = (room: Room, roomMap: RoomMap): void => {
 
   // DEBUG
   // TODO: Put into roomMap as result
-  flattenArray(extensionPositionsPerRange).forEach((position: RoomPosition): void => {
-    room.visual.text('EXT', position.x, position.y, {
+  flattenArray(extensionPositionsPerRange).forEach((position: SB_RoomPosition): void => {
+    room.visual.text('EXT', position.position.x, position.position.y, {
       align: 'center',
       color: 'darkorange',
       font: 0.2,
     });
   });
-  flattenArray(roadPositionsPerRange).forEach((position: RoomPosition): void => {
-    room.visual.text('ROAD(3)', position.x, position.y + 0.2, {
+  flattenArray(roadPositionsPerRange).forEach((position: SB_RoomPosition): void => {
+    room.visual.text('ROAD(3)', position.position.x, position.position.y + 0.2, {
       align: 'center',
       color: 'lightblue',
       font: 0.2,

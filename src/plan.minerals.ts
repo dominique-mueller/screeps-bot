@@ -1,4 +1,4 @@
-import { RoomMap } from "./plan.interfaces";
+import { SB_Room, SB_RoomPosition } from './plan.interfaces';
 import { findAdjacentPositionsForPositionNTimes } from './plan.utilities';
 
 /**
@@ -8,13 +8,13 @@ import { findAdjacentPositionsForPositionNTimes } from './plan.utilities';
  * @param   roomMap Room map (will be mutated in place)
  * @param   mineral Source
  */
-const planSource = (room: Room, roomMap: RoomMap, mineral: Mineral): void => {
+const planSource = (room: Room, roomMap: SB_Room, mineral: Mineral): void => {
   // Get adjacent positions of mineral
-  const adjacentPositions: Array<Array<RoomPosition>> = findAdjacentPositionsForPositionNTimes(room, mineral.pos, 2);
+  const adjacentPositions: Array<Array<SB_RoomPosition>> = findAdjacentPositionsForPositionNTimes(room, { position: mineral.pos }, 2);
 
   // Find positions
-  const dockingPositions: Array<RoomPosition> = adjacentPositions[0];
-  const reserved: Array<RoomPosition> = adjacentPositions[1];
+  const dockingPositions: Array<SB_RoomPosition> = adjacentPositions[0];
+  const reserved: Array<SB_RoomPosition> = adjacentPositions[1];
 
   // Update room map
   roomMap.minerals.push({
@@ -31,7 +31,7 @@ const planSource = (room: Room, roomMap: RoomMap, mineral: Mineral): void => {
  * @param   room    Room
  * @param   roomMap Room map (will be mutated in place)
  */
-export const planMinerals = (room: Room, roomMap: RoomMap): void => {
+export const planMinerals = (room: Room, roomMap: SB_Room): void => {
   // Find minerals
   const minerals: Array<Mineral> = room.find(FIND_MINERALS);
 

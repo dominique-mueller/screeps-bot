@@ -8,7 +8,7 @@
  *   - travel room (nothing)
  */
 
-import { planSpawn } from './plan.spawn';
+import { planBase } from './plan.base';
 import { planSources } from './plan.sources';
 import { planController } from './plan.controller';
 import { planRoads } from './plan.roads';
@@ -17,7 +17,7 @@ import { planExitRoads } from './plan.exit-roads';
 import { planExtensions } from './plan.extensions';
 import { renderRoomMapVisualization } from './debug';
 import { planExits } from './plan.exits';
-import { RoomMap } from './plan.interfaces';
+import { SB_Room } from './plan.interfaces';
 
 /**
  * Plan room
@@ -25,7 +25,7 @@ import { RoomMap } from './plan.interfaces';
 export const planRoom = (room: Room): void => {
   // INIT
   const roomMap = {
-    baseCenter: undefined,
+    base: undefined,
     links: [],
     minerals: [],
     ramparts: [],
@@ -36,14 +36,13 @@ export const planRoom = (room: Room): void => {
     storages: [],
     towers: [],
     walls: [],
-  } as any as RoomMap;
+  } as any as SB_Room;
 
   // RUN
   // TODO: How to save building priority (only temp?)
   // TODO: How to save connections? (e.g. link of source vs. link of XYZ)
-  // TODO: Prevent all that shitty mapping OR make it faster OR cache if ==> PERF!!!!!
   planExits(room, roomMap);
-  planSpawn(room, roomMap);
+  planBase(room, roomMap);
   planController(room, roomMap);
   planSources(room, roomMap);
   planMinerals(room, roomMap);
@@ -54,6 +53,6 @@ export const planRoom = (room: Room): void => {
   // DEBUG
   const debug = true;
   if (debug) {
-    renderRoomMapVisualization(room, roomMap as RoomMap);
+    renderRoomMapVisualization(room, roomMap);
   }
 };

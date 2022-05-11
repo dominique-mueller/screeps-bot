@@ -1,7 +1,7 @@
-import { RoomMap } from "./plan.interfaces";
+import { SB_Room, SB_RoomPosition } from './plan.interfaces';
 import {
   filterPositions,
-  findAdjacentPositionsForPosition,
+  findAdjacentRoomPositionsForRoomPosition,
   findAdjacentPositionsForPositionNTimes,
   findDirectPathForPlanning,
   sortPathPositionsByLength,
@@ -14,19 +14,19 @@ import {
  * @param   roomMap Room map (will be mutated in place)
  * @param   source  Source
  */
-const planSource = (room: Room, roomMap: RoomMap, source: Source): void => {
+const planSource = (room: Room, roomMap: SB_Room, source: Source): void => {
   // Get source adjacent positions
   // - Range 1 for docking (e.g. static harvesting via link, dynamic harvesting via transporter) - always blocked (no constructions)!
   // - Range 2 for transport (e.g. static via link, dynamic via transporter) - reserved (open for road constructions)!
-  const sourceAdjacentPositions: Array<Array<RoomPosition>> = findAdjacentPositionsForPositionNTimes(room, source.pos, 2);
+  const sourceAdjacentPositions: Array<Array<SB_RoomPosition>> = findAdjacentPositionsForPositionNTimes(room, { position: source.pos }, 2);
 
   // Find optimal link position
-  const linkPosition: RoomPosition =
+  const linkPosition: SB_RoomPosition =
     // Start with the transport positions
     sourceAdjacentPositions[1]
       // Find direct paths between transport positions and base link
-      .map((adjacentPosition: RoomPosition): Array<RoomPosition> => {
-        return findDirectPathForPlanning(room, roomMap.links[0].position, adjacentPosition);
+      .map((adjacentPosition: SB_RoomPosition): Array<SB_RoomPosition> => {
+        return findDirectPathForPlanning(room, roomMap.links[0], adjacentPosition);
       })
       // Find shortest path
       .sort(sortPathPositionsByLength)[0]
@@ -34,16 +34,16 @@ const planSource = (room: Room, roomMap: RoomMap, source: Source): void => {
       .slice(-1)[0];
 
   // Find adjacent link positions
-  const linkAdjacentPositions: Array<RoomPosition> = findAdjacentPositionsForPosition(room, linkPosition);
+  const linkAdjacentPositions: Array<SB_RoomPosition> = findAdjacentRoomPositionsForRoomPosition(room, linkPosition);
 
   // Find docking positions
-  const secondaryDockingPositions: Array<RoomPosition> = filterPositions(sourceAdjacentPositions[0], linkAdjacentPositions);
-  const primaryDockingPositions: Array<RoomPosition> = filterPositions(sourceAdjacentPositions[0], secondaryDockingPositions);
-  const dockingPosition: RoomPosition = primaryDockingPositions[0];
-  const otherDockingPositions: Array<RoomPosition> = [...primaryDockingPositions.slice(1), ...secondaryDockingPositions];
+  const secondaryDockingPositions: Array<SB_RoomPosition> = filterPositions(sourceAdjacentPositions[0], linkAdjacentPositions);
+  const primaryDockingPositions: Array<SB_RoomPosition> = filterPositions(sourceAdjacentPositions[0], secondaryDockingPositions);
+  const dockingPosition: SB_RoomPosition = primaryDockingPositions[0];
+  const otherDockingPositions: Array<SB_RoomPosition> = [...primaryDockingPositions.slice(1), ...secondaryDockingPositions];
 
   // Find reserved positions
-  const reserved: Array<RoomPosition> = [
+  const reserved: Array<SB_RoomPosition> = [
     // Transport positions (except link position)
     ...filterPositions(sourceAdjacentPositions[1], [linkPosition]),
     // Link adjacent positions (except docking positions)
@@ -58,9 +58,7 @@ const planSource = (room: Room, roomMap: RoomMap, source: Source): void => {
     otherDockingPositions,
     position: source.pos,
   });
-  roomMap.links.push({
-    position: linkPosition,
-  });
+  roomMap.links.push(linkPosition);
   roomMap.reserved.push(...reserved);
 };
 
@@ -70,7 +68,7 @@ const planSource = (room: Room, roomMap: RoomMap, source: Source): void => {
  * @param   room    Room
  * @param   roomMap Room map (will be mutated in place)
  */
-export const planSources = (room: Room, roomMap: RoomMap): void => {
+export const planSources = (room: Room, roomMap: SB_Room): void => {
   // Find sources
   const sources: Array<Source> = room.find(FIND_SOURCES);
 

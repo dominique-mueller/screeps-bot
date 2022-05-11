@@ -1,5 +1,5 @@
-import { RoomMap, RoomWall } from "./plan.interfaces";
-import { filterPositions, findAdjacentPositionsForPosition, findAdjacentRoomNames, findRoomExitPositions } from './plan.utilities';
+import { SB_Room, SB_RoomPosition } from './plan.interfaces';
+import { filterPositions, findAdjacentRoomPositionsForRoomPosition, findAdjacentRoomNames, findRoomExitPositions } from './plan.utilities';
 
 /**
  * Plan exit to the given adjacent room
@@ -8,20 +8,20 @@ import { filterPositions, findAdjacentPositionsForPosition, findAdjacentRoomName
  * @param roomMap          Room map
  * @param adjacentRoomName Adjacent room name
  */
-const planExit = (room: Room, roomMap: RoomMap, adjacentRoomName: Room['name']): void => {
+const planExit = (room: Room, roomMap: SB_Room, adjacentRoomName: Room['name']): void => {
   // Find positions
-  const roomExitPositions: Array<RoomPosition> = findRoomExitPositions(room, adjacentRoomName);
+  const roomExitPositions: Array<SB_RoomPosition> = findRoomExitPositions(room, adjacentRoomName);
 
   // Find blocked positions (adjacent positions to room exit positions)
   // Note: The outmost 2 positions - room exit positions and their adjacent positions - cannot be used for constructing walls
-  const blockedPositions: Array<RoomPosition> = [];
+  const blockedPositions: Array<SB_RoomPosition> = [];
   for (let roomExitPositionIndex = 0; roomExitPositionIndex < roomExitPositions.length; roomExitPositionIndex++) {
     // Save blocked positions
     blockedPositions.push(
       // De-duplicate positions
       ...filterPositions(
         // Find adjacent positions
-        findAdjacentPositionsForPosition(room, roomExitPositions[roomExitPositionIndex]),
+        findAdjacentRoomPositionsForRoomPosition(room, roomExitPositions[roomExitPositionIndex]),
         [
           // Ignore room exit positions
           ...roomExitPositions,
@@ -34,14 +34,14 @@ const planExit = (room: Room, roomMap: RoomMap, adjacentRoomName: Room['name']):
 
   // Find wall positions
   // Note: Wall entries will be planned in other steps later on
-  const wallPositions: Array<RoomPosition> = [];
+  const wallPositions: Array<SB_RoomPosition> = [];
   for (let blockedPositionIndex = 0; blockedPositionIndex < blockedPositions.length; blockedPositionIndex++) {
     // Save wall positions
     wallPositions.push(
       // De-duplicate positions
       ...filterPositions(
         // Find adjacent positions
-        findAdjacentPositionsForPosition(room, blockedPositions[blockedPositionIndex]),
+        findAdjacentRoomPositionsForRoomPosition(room, blockedPositions[blockedPositionIndex]),
         [
           // Ignore room exit positions
           ...roomExitPositions,
@@ -55,13 +55,7 @@ const planExit = (room: Room, roomMap: RoomMap, adjacentRoomName: Room['name']):
   }
 
   // Update room map
-  roomMap.walls.push(
-    ...wallPositions.map((wallPosition: RoomPosition): RoomWall => {
-      return {
-        position: wallPosition,
-      };
-    }),
-  );
+  roomMap.walls.push(...wallPositions);
 };
 
 /**
@@ -70,7 +64,7 @@ const planExit = (room: Room, roomMap: RoomMap, adjacentRoomName: Room['name']):
  * @param room    Room
  * @param roomMap Room map
  */
-export const planExits = (room: Room, roomMap: RoomMap): void => {
+export const planExits = (room: Room, roomMap: SB_Room): void => {
   // Find adjacent rooms
   const adjacentRoomNames: Array<Room['name']> = findAdjacentRoomNames(room);
 
